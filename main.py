@@ -1,7 +1,7 @@
 import data
 import config
 import torch
-from model import CRNN
+import model
 
 import argparse
 
@@ -32,3 +32,5 @@ if __name__ == '__main__':
 	train.train(type, name)
 
 	print("Hello")
+
+	
