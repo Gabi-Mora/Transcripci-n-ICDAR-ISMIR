@@ -3,10 +3,6 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-
-
-
 class CRNN(nn.Module):
 	def __init__(self, height, num_classes):
 		super(CRNN, self).__init__()
@@ -46,8 +42,10 @@ class CRNN(nn.Module):
 		x = x.reshape(x.shape[0], -1, x.shape[2] * x.shape[3])
 		x, _ = self.RNN(x)
 		return self.dense(x)
-
-
+	
+	def load_model(self, path):
+		model = torch.load(path)
+		return model
 
 if __name__ == '__main__':
 	# batch, channels, height, width
