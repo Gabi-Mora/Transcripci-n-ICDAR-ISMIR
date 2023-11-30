@@ -11,13 +11,23 @@ class CRNN(nn.Module):
 		self.n_classes = num_classes
 
 		CNN_layers = [
-			nn.Conv2d(in_channels = 1, out_channels = 32, kernel_size = (3, 3), padding = 'same'),
+			nn.Conv2d(in_channels = 1, 	out_channels = 32, 	kernel_size = (3, 3), padding = 'same'),
 			nn.BatchNorm2d(num_features = 32),
+			nn.LeakyReLU(negative_slope = 0.2),
+			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 1)),
+
+			nn.Conv2d(in_channels = 32, out_channels = 64, 	kernel_size = (3, 3), padding = 'same'),
+			nn.BatchNorm2d(num_features = 64),
+			nn.LeakyReLU(negative_slope = 0.2),
+			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 1)),
+
+			nn.Conv2d(in_channels = 64, out_channels = 128, kernel_size = (3, 3), padding = 'same'),
+			nn.BatchNorm2d(num_features = 128),
 			nn.LeakyReLU(negative_slope = 0.2),
 			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 2)),
 
-			nn.Conv2d(in_channels = 32, out_channels = 64, kernel_size = (3, 3), padding = 'same'),
-			nn.BatchNorm2d(num_features = 64),
+			nn.Conv2d(in_channels = 128, out_channels = 256,kernel_size = (3, 3), padding = 'same'),
+			nn.BatchNorm2d(num_features = 256),
 			nn.LeakyReLU(negative_slope = 0.2),
 			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 2)),
 
