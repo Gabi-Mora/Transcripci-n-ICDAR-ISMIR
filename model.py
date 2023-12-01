@@ -20,7 +20,7 @@ class CRNN(nn.Module):
 			nn.BatchNorm2d(num_features = 64),
 			nn.LeakyReLU(negative_slope = 0.2),
 			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 1)),
-
+			
 			nn.Conv2d(in_channels = 64, out_channels = 128, kernel_size = (3, 3), padding = 'same'),
 			nn.BatchNorm2d(num_features = 128),
 			nn.LeakyReLU(negative_slope = 0.2),
@@ -35,12 +35,12 @@ class CRNN(nn.Module):
 		self.CNN = nn.Sequential(*CNN_layers)
 
 		RNN_layers = [
-			nn.LSTM(input_size = 64*self.height//4, hidden_size = 128, bidirectional = True, batch_first = True),
+			nn.LSTM(input_size = 256*self.height//4, hidden_size = 128, bidirectional = True, batch_first = True),
 		]
 		self.RNN = nn.Sequential(*RNN_layers)
 
 		dense_layers = [
-			nn.Linear(in_features = 256, out_features = self.n_classes + 1), # Additional one for blank symbol
+			nn.Linear(in_features = 128, out_features = self.n_classes + 1), # Additional one for blank symbol
 			nn.LogSoftmax(dim = 2)
 		]
 		self.dense = nn.Sequential(*dense_layers)

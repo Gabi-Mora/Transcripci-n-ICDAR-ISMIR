@@ -112,14 +112,23 @@ def decode_CTC(batch_posteriorgram, input_length):
 		decoded_sequence = list()
 		# posteriorgram = batch_posteriorgram[it_batch][0:original_batch_images_size[it_batch]]
 		posteriorgram = batch_posteriorgram[it_batch]
+
+		total_timesteps = len(posteriorgram[:input_length[it_batch],:])
+		total_estimation = 0
+		
 		#Looping over temporal slices to analyze:
 		for array in posteriorgram[:input_length[it_batch],:]:
 			#Estimated symbol:
+			#print(array)
 			decoded_value = [np.where(array.max() == array)[0][0] if np.where(array.max() == array)[0][0] != len(array) -1 else -1]
+			#print(array.max())
+			total_estimation += 1 + array.max()
 
 			#Appending symbol:
 			decoded_sequence.extend(decoded_value)
 		
+		mean_estimation = total_estimation / total_timesteps
+		#print(mean_estimation)
 		#Applying function B for grouping alike symbols:
 		decoded_sequence = [i[0] for i in groupby(decoded_sequence) if i[0] != -1]
 
