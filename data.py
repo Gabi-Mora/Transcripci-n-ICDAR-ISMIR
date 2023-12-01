@@ -141,7 +141,10 @@ def load_batch_data(w2i, files, img_height, type, name):
 		if type == "musica":
 			ext = '.png.agnostic'
 		else:
-			ext = '.png.txt'
+			if name == "Bentham":
+				ext = '.txt'
+			else:
+				ext = '.png.txt'
 
 		gt_batch.append([w2i[u] for u in read_gt(os.path.join(config.DDBB_path, type, name, single_file + ext))])
 		
