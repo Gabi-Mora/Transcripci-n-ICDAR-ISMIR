@@ -28,3 +28,5 @@ data_name   = None
 
 batch_size = 16
 n_epochs = 150
+
+img_height = 128
