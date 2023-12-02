@@ -24,10 +24,10 @@ def train(type, name):
 	print()
 	
 	# Create model:
-	crnn = model.CRNN(height = 100, num_classes = len(w2i))
+	crnn = model.CRNN(height = config.img_height, num_classes = len(w2i))
 
 	# Create data generator:
-	data_gen = data.data_generator(w2i = w2i, type = type, name = name, img_height = 100)
+	data_gen = data.data_generator(w2i = w2i, type = type, name = name, img_height = config.img_height)
 
 	# Instantiating CTC loss:
 	ctc_loss = nn.CTCLoss(blank = len(w2i))
@@ -80,12 +80,12 @@ def train(type, name):
 		# Evaluating model:
 		crnn.eval()
 		###-Validation:
-		SER_val = evalute_partition(w2i = w2i, pred_model = crnn, type = type, name = name, img_height = 100, partition = 'valid')
-		#SER_val = evalute_partition(w2i = w2i, pred_model = crnn, img_height = 100, partition = 'ValidationLines')
+		SER_val = evalute_partition(w2i = w2i, pred_model = crnn, type = type, name = name, img_height = config.img_height, partition = 'valid')
+		#SER_val = evalute_partition(w2i = w2i, pred_model = crnn, img_height = config.img_height, partition = 'ValidationLines')
 
 		###-Test:
-		SER_test = evalute_partition(w2i = w2i, pred_model = crnn, type = type, name = name, img_height = 100, partition = 'test')
-		#SER_test = evalute_partition(w2i = w2i, pred_model = crnn, img_height = 100, partition = 'TestLines')
+		SER_test = evalute_partition(w2i = w2i, pred_model = crnn, type = type, name = name, img_height = config.img_height, partition = 'test')
+		#SER_test = evalute_partition(w2i = w2i, pred_model = crnn, img_height = config.img_height, partition = 'TestLines')
 		print("Epoch #{}\tVAL: {:.2f}%\tTEST: {:.2f}%".format(it_epoch+1, 100*SER_val, 100*SER_test))
 
 	if not os.path.exists('Modelos'):

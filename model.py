@@ -3,6 +3,8 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 
+import config
+
 class CRNN(nn.Module):
 	def __init__(self, height, num_classes):
 		super(CRNN, self).__init__()
@@ -11,22 +13,22 @@ class CRNN(nn.Module):
 		self.n_classes = num_classes
 
 		CNN_layers = [
-			nn.Conv2d(in_channels = 1, 	out_channels = 32, 	kernel_size = (3, 3), padding = 'same'),
+			nn.Conv2d(in_channels = 1, out_channels = 32, kernel_size = (3, 3), padding = 1),
 			nn.BatchNorm2d(num_features = 32),
 			nn.LeakyReLU(negative_slope = 0.2),
 			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 1)),
 
-			nn.Conv2d(in_channels = 32, out_channels = 64, 	kernel_size = (3, 3), padding = 'same'),
+			nn.Conv2d(in_channels = 32, out_channels = 64, kernel_size = (3, 3), padding = 1),
 			nn.BatchNorm2d(num_features = 64),
 			nn.LeakyReLU(negative_slope = 0.2),
 			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 1)),
-			
-			nn.Conv2d(in_channels = 64, out_channels = 128, kernel_size = (3, 3), padding = 'same'),
+
+			nn.Conv2d(in_channels = 64, out_channels = 128, kernel_size = (3, 3), padding = 1),
 			nn.BatchNorm2d(num_features = 128),
 			nn.LeakyReLU(negative_slope = 0.2),
-			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 2)),
+			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 1)),
 
-			nn.Conv2d(in_channels = 128, out_channels = 256,kernel_size = (3, 3), padding = 'same'),
+			nn.Conv2d(in_channels = 128, out_channels = 256, kernel_size = (3, 3), padding = 1),
 			nn.BatchNorm2d(num_features = 256),
 			nn.LeakyReLU(negative_slope = 0.2),
 			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 2)),
@@ -35,12 +37,12 @@ class CRNN(nn.Module):
 		self.CNN = nn.Sequential(*CNN_layers)
 
 		RNN_layers = [
-			nn.LSTM(input_size = 256*self.height//4, hidden_size = 128, bidirectional = True, batch_first = True),
+			nn.LSTM(input_size = 256*self.height//16, hidden_size = 256, bidirectional = True, batch_first = True, num_layers = 2),
 		]
 		self.RNN = nn.Sequential(*RNN_layers)
 
 		dense_layers = [
-			nn.Linear(in_features = 128, out_features = self.n_classes + 1), # Additional one for blank symbol
+			nn.Linear(in_features = 512, out_features = self.n_classes + 1), # Additional one for blank symbol
 			nn.LogSoftmax(dim = 2)
 		]
 		self.dense = nn.Sequential(*dense_layers)
@@ -59,6 +61,6 @@ class CRNN(nn.Module):
 
 if __name__ == '__main__':
 	# batch, channels, height, width
-	tensor = torch.tensor(np.ones(shape = (16, 1, 100, 150)))
+	tensor = torch.tensor(np.ones(shape = (16, 1, config.img_height, 150)))
 	model = CRNN(height = 100, num_classes = 100)
 	print("hello")
