@@ -194,7 +194,7 @@ def data_generator(w2i, type, name, img_height = 50, partition = 'train'):
 
 if __name__ == '__main__':
 	w2i, i2w = obtain_dictionaries()
-	data_gen = data_generator(w2i = w2i, img_height = 100)
+	data_gen = data_generator(w2i = w2i, img_height = config.img_height)
 
 	img, seq, img_len, seq_len = next(data_gen)
 	# b0, b1 = batches
