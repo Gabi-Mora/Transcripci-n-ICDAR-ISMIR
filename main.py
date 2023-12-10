@@ -17,9 +17,10 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description = desc)
 	parser.add_argument("-type", help = "Type of dataset: musica/texto")
 	parser.add_argument("-name", help = "Name of dataset")
+	parser.add_argument("-rate", help = "Initial rate of images used in training")
 	args = parser.parse_args()
 
-	type = name = None
+	type = name = rate = None
 
 	if args.type and args.name:
 		print("Type: % s" % args.type)
@@ -29,7 +30,10 @@ if __name__ == '__main__':
 	else:
 		raise Exception("Exception")
 	
-	train.train(type, name)
+	if args.rate:
+		rate = args.rate
+	
+	train.train(type, name, rate)
 
 	print("Hello")
 
