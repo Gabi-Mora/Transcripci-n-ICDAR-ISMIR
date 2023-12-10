@@ -16,17 +16,17 @@ class CRNN(nn.Module):
 			nn.Conv2d(in_channels = 1, out_channels = 32, kernel_size = (3, 3), padding = 1),
 			nn.BatchNorm2d(num_features = 32),
 			nn.LeakyReLU(negative_slope = 0.2),
-			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 1)),
+			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 2)),
 
 			nn.Conv2d(in_channels = 32, out_channels = 64, kernel_size = (3, 3), padding = 1),
 			nn.BatchNorm2d(num_features = 64),
 			nn.LeakyReLU(negative_slope = 0.2),
-			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 1)),
+			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 2)),
 
 			nn.Conv2d(in_channels = 64, out_channels = 128, kernel_size = (3, 3), padding = 1),
 			nn.BatchNorm2d(num_features = 128),
 			nn.LeakyReLU(negative_slope = 0.2),
-			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 1)),
+			nn.MaxPool2d(kernel_size = (2, 2), stride = (2, 2)),
 
 			nn.Conv2d(in_channels = 128, out_channels = 256, kernel_size = (3, 3), padding = 1),
 			nn.BatchNorm2d(num_features = 256),
@@ -53,7 +53,8 @@ class CRNN(nn.Module):
 		x = x.permute(0, 3, 2, 1)
 		x = x.reshape(x.shape[0], -1, x.shape[2] * x.shape[3])
 		x, _ = self.RNN(x)
-		return self.dense(x)
+		x = self.dense(x)
+		return x
 	
 	def load_model(self, path):
 		model = torch.load(path)
