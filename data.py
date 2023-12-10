@@ -159,7 +159,7 @@ def load_batch_data(w2i, files, img_height, type, name):
 		ref_shape = img_batch[Y_it].shape
 		img_batch[Y_it] = np.concatenate((img_batch[Y_it],  np.zeros(shape=(ref_shape[0], ref_shape[1], max_length-ref_shape[2]))), axis=2)
 
-	input_length = [u//4 for u in input_length]
+	input_length = [u//16 for u in input_length]
 
 	### GT length:
 	max_length = max(label_length)
@@ -170,10 +170,16 @@ def load_batch_data(w2i, files, img_height, type, name):
 	return img_batch, gt_batch, input_length, label_length
 
 
-def data_generator(w2i, type, name, img_height = 50, partition = 'train'):
+def data_generator(w2i, type, name, rate, img_height = 50, partition = 'train'):
 	# Listing train files:
 	#with open(os.path.join(config.folds_path, 'Fold' + str(config.fold), 'Partitions', partition + '.lst')) as f:
-	with open(os.path.join(config.folds_path, type, name, partition + '.txt')) as f:
+	new_name = None
+	if rate is not None:
+		new_name = name + '/' + rate
+	else:
+		new_name = name
+
+	with open(os.path.join(config.folds_path, type, new_name, partition + '.txt')) as f:
 		files = list(map(str.strip, f.readlines()))
 	
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -191,6 +197,23 @@ def data_generator(w2i, type, name, img_height = 50, partition = 'train'):
 
 		yield torch.from_numpy(np.array(img_batch)).to(device), torch.from_numpy(np.array(gt_batch)).to(device), torch.from_numpy(np.array(input_length)).to(device), torch.from_numpy(np.array(label_length)).to(device)
 		#yield torch.from_numpy(np.array(img_batch, dtype = np.float32)).to(device), torch.from_numpy(np.array(gt_batch)).to(device), torch.from_numpy(np.array(input_length)).to(device), torch.from_numpy(np.array(label_length)).to(device)
+
+def create_fold(type, name, partition, rate):
+	with open(os.path.join(config.folds_path, type, name, partition + '.txt')) as f:
+		files = list(map(str.strip, f.readlines()))
+
+	lim_files = (len(files) * int(rate)) // 100
+
+	new_files = files[0:lim_files]
+
+	if not os.path.exists(os.path.join(config.folds_path, type, name, rate)):
+   		# Create a new directory because it does not exist
+		os.makedirs(os.path.join(config.folds_path, type, name, rate))
+
+	f = open(os.path.join(config.folds_path, type, name, rate, partition + ".txt"), "w")
+	for x in new_files:
+		f.write(x + "\n")
+	f.close()
 
 if __name__ == '__main__':
 	w2i, i2w = obtain_dictionaries()
