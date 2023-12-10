@@ -30,3 +30,5 @@ batch_size = 16
 n_epochs = 150
 
 img_height = 128
+
+patience = 15
