@@ -44,6 +44,8 @@ def train(type, name, rate):
 	best_SER = float.MAX_VALUE
 	count = 0
 
+	nombre_modelo = datetime.date.today().strftime("%m-%d-%Y_%H-%M-%S")
+
 	# Fitting model:
 	#with open(os.path.join(config.folds_path, 'Fold' + str(config.fold), 'Partitions', 'Train.lst')) as f:
 	#with open(os.path.join(config.folds_path, type, name, 'train.txt')) as f:
@@ -102,7 +104,6 @@ def train(type, name, rate):
 		crnn.eval()
 		###-Validation:
 		SER_val = evalute_partition(w2i = w2i, pred_model = crnn, type = type, name = name, rate = rate, img_height = config.img_height, partition = 'valid')
-		#SER_val = evalute_partition(w2i = w2i, pred_model = crnn, img_height = config.img_height, partition = 'ValidationLines')
 
 		###-Test:
 		#SER_test = evalute_partition(w2i = w2i, pred_model = crnn, type = type, name = name, img_height = config.img_height, partition = 'test')
@@ -113,7 +114,7 @@ def train(type, name, rate):
 		   
 		# Checkpoint
 		if SER_val < best_SER:
-			PATH = os.path.join('Modelos', name, datetime.date.today().strftime("%m-%d-%Y_%H-%M-%S") + '.pt')
+			PATH = os.path.join('Modelos', name, nombre_modelo + '.pt')
 			torch.save(crnn, PATH)
 			count = 0
 		else:
@@ -124,6 +125,10 @@ def train(type, name, rate):
 			print('Training Stopped: EarlyStopping')
 			break
 
+	SER_test = evalute_partition(w2i = w2i, pred_model = crnn, type = type, name = name, img_height = config.img_height, partition = 'test')
+
+	print("TEST: {:.2f}%".format(100*SER_val))
+
 	return
 
 
@@ -132,9 +137,6 @@ def train(type, name, rate):
 def decode_CTC(batch_posteriorgram, input_length):
 	out = list()
 	confidences = list()
-
-	#print("Lenght: ", len(batch_posteriorgram))
-	#print("Lenght: ", len(input_length))
 
 	for it_batch in range(len(batch_posteriorgram)):
 		#Performing Best Path decoding:
@@ -148,16 +150,14 @@ def decode_CTC(batch_posteriorgram, input_length):
 		#Looping over temporal slices to analyze:
 		for array in posteriorgram[:input_length[it_batch],:]:
 			#Estimated symbol:
-			#print(array)
 			decoded_value = [np.where(array.max() == array)[0][0] if np.where(array.max() == array)[0][0] != len(array) -1 else -1]
-			#print(array.max())
 			total_estimation += 1 + array.max()
 
 			#Appending symbol:
 			decoded_sequence.extend(decoded_value)
 		
 		mean_estimation = total_estimation / total_timesteps
-		#print(mean_estimation)
+		
 		#Applying function B for grouping alike symbols:
 		decoded_sequence = [i[0] for i in groupby(decoded_sequence) if i[0] != -1]
 
@@ -171,7 +171,6 @@ def decode_CTC(batch_posteriorgram, input_length):
 
 
 def evalute_partition(w2i, pred_model, type, name, rate, img_height = 50, partition = 'Test'):
-	#with open(os.path.join(config.folds_path, 'Fold' + str(config.fold), 'Partitions', partition + '.lst')) as f:
 	new_name = None
 	if rate is not None:
 		new_name = name + '/' + rate
@@ -196,16 +195,11 @@ def evalute_partition(w2i, pred_model, type, name, rate, img_height = 50, partit
 		end_idx = min(it + config.batch_size, len(files))
 		img_batch, gt_batch, input_length, _ = data.load_batch_data(w2i, files[init_idx:end_idx], img_height, type, name)
 
-		#print("Lenght: ", len(img_batch))
-
 		batch_posteriorgram = pred_model(torch.from_numpy(np.array(img_batch)).float().to(device))
 		prediction, confidence_list = decode_CTC(batch_posteriorgram.cpu().detach().numpy(), input_length)
 
 		files_names += files[init_idx:end_idx]
 		confidences += confidence_list
-
-		#print("Prediction: ", prediction)
-		#print("True      : ", gt_batch)
 
 		y_pred.extend(prediction)
 		y_true.extend(gt_batch)
@@ -214,11 +208,24 @@ def evalute_partition(w2i, pred_model, type, name, rate, img_height = 50, partit
 
 	ser = evaluation.SER(y_true = y_true, y_pred = y_pred)
 
-	with open('prueba.csv', 'w', newline='') as file:
-		writer = csv.writer(file)
-		for i in range(len(files_names)):
-			writer.writerow([files_names[i], confidences[i]])
+	if rate is not None and partition == 'test':
+		if not os.path.exists('Confianzas'):
+   			# Create a new directory because it does not exist
+			os.makedirs('Confianzas')
 
+		if not os.path.exists(os.path.join('Confianzas', name)):
+   			# Create a new directory because it does not exist
+			os.makedirs(os.path.join('Confianzas', name))
+
+		nombre_modelo = datetime.date.today().strftime("%m-%d-%Y_%H-%M-%S")
+		csv_file = os.path.join('Confianzas', name, nombre_modelo + '.csv')
+
+		with open(csv_file, 'w', newline='') as file:
+			writer = csv.writer(file)
+			for i in range(len(files_names)):
+				writer.writerow([files_names[i], confidences[i]])
+
+		print('Confidences saved at: ', csv_file)
 
 	return ser
 
