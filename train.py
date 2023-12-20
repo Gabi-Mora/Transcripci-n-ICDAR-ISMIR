@@ -44,7 +44,7 @@ def train(type, name, rate):
 	best_SER = float.MAX_VALUE
 	count = 0
 
-	nombre_modelo = datetime.date.today().strftime("%m-%d-%Y_%H-%M-%S")
+	nombre_modelo = datetime.datetime.now().strftime("%m-%d-%Y_%H-%M-%S")
 
 	# Fitting model:
 	#with open(os.path.join(config.folds_path, 'Fold' + str(config.fold), 'Partitions', 'Train.lst')) as f:
@@ -125,9 +125,9 @@ def train(type, name, rate):
 			print('Training Stopped: EarlyStopping')
 			break
 
-	SER_test = evalute_partition(w2i = w2i, pred_model = crnn, type = type, name = name, img_height = config.img_height, partition = 'test')
+	#SER_test = evalute_partition(w2i = w2i, pred_model = crnn, type = type, name = name, img_height = config.img_height, partition = 'test')
 
-	print("TEST: {:.2f}%".format(100*SER_val))
+	#print("TEST: {:.2f}%".format(100*SER_test))
 
 	return
 
@@ -208,7 +208,8 @@ def evalute_partition(w2i, pred_model, type, name, rate, img_height = 50, partit
 
 	ser = evaluation.SER(y_true = y_true, y_pred = y_pred)
 
-	if rate is not None and partition == 'test':
+	#if rate is not None and partition == 'test':
+	if partition == 'test':
 		if not os.path.exists('Confianzas'):
    			# Create a new directory because it does not exist
 			os.makedirs('Confianzas')
@@ -217,7 +218,7 @@ def evalute_partition(w2i, pred_model, type, name, rate, img_height = 50, partit
    			# Create a new directory because it does not exist
 			os.makedirs(os.path.join('Confianzas', name))
 
-		nombre_modelo = datetime.date.today().strftime("%m-%d-%Y_%H-%M-%S")
+		nombre_modelo = datetime.datetime.now().strftime("%m-%d-%Y_%H-%M-%S")
 		csv_file = os.path.join('Confianzas', name, nombre_modelo + '.csv')
 
 		with open(csv_file, 'w', newline='') as file:
