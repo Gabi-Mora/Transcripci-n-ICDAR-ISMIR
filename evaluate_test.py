@@ -10,6 +10,36 @@ import csv
 
 import train
 import evaluation
+import model
+
+def evaluation_loop(crnn, w2i, files, type, input):
+	it = 0
+	y_true = list()
+	y_pred = list()
+
+	files_names = list()
+	confidences = list()
+
+	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+	while it < len(files):
+		init_idx = it
+		end_idx = min(it + config.batch_size, len(files))
+		img_batch, gt_batch, input_length, _ = data.load_batch_data(w2i, files[init_idx:end_idx], config.img_height, type, input)
+
+		batch_posteriorgram = crnn(torch.from_numpy(np.array(img_batch)).float().to(device))
+		prediction, confidence_list = train.decode_CTC(batch_posteriorgram.cpu().detach().numpy(), input_length)
+
+		files_names += files[init_idx:end_idx]
+		confidences += confidence_list
+
+		y_pred.extend(prediction)
+		y_true.extend(gt_batch)
+
+		it = end_idx
+
+	return files_names, confidences, y_pred, y_true
+
 
 if __name__ == '__main__':
 
@@ -17,17 +47,17 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description = desc)
 	parser.add_argument("-type", help = "Type of dataset: musica/texto")
-	parser.add_argument("-model", help = "Model use for the test")
+	parser.add_argument("-model", help = "Model to use for the test")
 	parser.add_argument("-input", help = "Images to use as test samples")
 	args = parser.parse_args()
 
-	type = model = input = None
+	type = _model = input = None
 
 	if args.type and args.model and args.input:
 		print("Type: % s" % args.type)
 		type = args.type
 		print("Model: % s" % args.model)
-		model = args.model
+		_model = args.model
 		print("Test Input: % s" % args.input)
 		input = args.input
 	else:
@@ -44,13 +74,14 @@ if __name__ == '__main__':
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	#device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
+	#files_names, confidences, y_true, y_pred = evaluation_loop(w2i, files, type, input)
 	it = 0
 	y_true = list()
 	y_pred = list()
 
 	files_names = list()
 	confidences = list()
-	
+
 	while it < len(files):
 		init_idx = it
 		end_idx = min(it + config.batch_size, len(files))
