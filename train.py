@@ -262,13 +262,18 @@ def create_diccionary(crnn, w2i, i2w, type, name, term, file_name):
 	index = list(dicc)
 	add_files = list()
 
+	num_limit = (len(index) * config.confidence_limit) / 100
+	cont_limit = 0
+
 	#f = open(os.path.join(config.folds_path, type, name, 'rate', 'train.txt'), "a")
 	f = open(os.path.join('Temp', 'Folds', file_name), "a")
 	for x in index:
 		value = dicc[x]
 
 		if term != 3:
-			if value[0] > config.confidence_threshold_max:
+			if value[0] > config.confidence_threshold_max and cont_limit < num_limit:
+				cont_limit += 1
+				
 				add_files.append(x)
 				f.write(x + '\n')
 
@@ -278,10 +283,12 @@ def create_diccionary(crnn, w2i, i2w, type, name, term, file_name):
 						ff.write(str(i2w[token]) + '\t')
 					ff.write('\n')
 					ff.close()
-				else:
-					break
+			else:
+				break
 		else:
-			if value[0] < config.confidence_threshold_min:
+			if value[0] < config.confidence_threshold_min and cont_limit < num_limit:
+				cont_limit += 1
+
 				add_files.append(x)
 				f.write(x + '\n')
 
@@ -291,8 +298,8 @@ def create_diccionary(crnn, w2i, i2w, type, name, term, file_name):
 						ff.write(str(i2w[token]) + '\t')
 					ff.write('\n')
 					ff.close()
-				else:
-					break
+			else:
+				break
 				
 	f.close()
 

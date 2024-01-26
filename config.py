@@ -13,10 +13,12 @@ data_type   = None
 data_name   = None
 
 batch_size = 16
-n_epochs = 5
+n_epochs = 100
 
 img_height = 128
-confidence_threshold_max = 0.2
+confidence_threshold_max = 0.9
 confidence_threshold_min = 0.2
+
+confidence_limit = 5
 
 patience = 15
