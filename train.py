@@ -183,7 +183,7 @@ def train(type, name, name2, rate, term):
 			with open(os.path.join('Temp', 'Folds', 'test.txt')) as f:
 				test_files = list(map(str.strip, f.readlines()))
 
-			files_names, confidences, y_pred, y_true = evaluate_test.evaluation_loop(crnn, w2i, test_files, type, name)
+			files_names, confidences, y_pred, y_true, minimum_confidences, maximum_confidences, median_confidences = evaluate_test.evaluation_loop(crnn, w2i, test_files, type, name)
 
 			dicc = {}
 			for i in range(len(files_names)):
@@ -200,7 +200,7 @@ def train(type, name, name2, rate, term):
 					trans_pred.append(i2w[token])
 
 				#dicc[files_names[i]] = [confidences[i], y_pred[i]]
-				dicc[files_names[i]] = [confidences[i], trans_pred, trans_true, Value_SER]
+				dicc[files_names[i]] = [confidences[i], median_confidences[i], minimum_confidences[i], maximum_confidences[i], trans_pred, trans_true, Value_SER]
 
 			if term != 3:
 				dicc = {k: v for k, v in sorted(dicc.items(), key=lambda item: item[1], reverse=True)}
@@ -209,10 +209,10 @@ def train(type, name, name2, rate, term):
 				writer = csv.writer(file)
 				#for i in range(len(files_names)):
 				index = list(dicc)
-				writer.writerow(['Nombre Imagen', 'Confianza', 'Secuencia Predecida', 'Secuencia Verdadera', 'SER'])
+				writer.writerow(['Nombre Imagen', 'Confianza Media', 'Confianza Mediana', 'Confianza Minima', 'Confianza Maxima', 'Secuencia Predecida', 'Secuencia Verdadera', 'SER'])
 				for x in index:
 					value = dicc[x]
-					writer.writerow([x, value[0], value[1], value[2], value[3]])
+					writer.writerow([x, value[0], value[1], value[2], value[3], value[4], value[5], value[6]])
 
 			print('Confidences saved at: ', csv_file)
 			loop += 1
@@ -246,7 +246,7 @@ def create_diccionary(crnn, w2i, i2w, type, name, term, file_name):
 	with open(os.path.join('Temp', 'Folds', 'res_' + file_name)) as f:
 		eval_files += list(map(str.strip, f.readlines()))
 
-	files_names, confidences, y_pred, y_true = evaluate_test.evaluation_loop(crnn, w2i, eval_files, type, name)
+	files_names, confidences, y_pred, y_true, minimum_confidences, maximum_confidences, median_confidences = evaluate_test.evaluation_loop(crnn, w2i, eval_files, type, name)
 
 	dicc = {}
 	for i in range(len(files_names)):
@@ -273,7 +273,7 @@ def create_diccionary(crnn, w2i, i2w, type, name, term, file_name):
 		if term != 3:
 			if value[0] > config.confidence_threshold_max and cont_limit < num_limit:
 				cont_limit += 1
-				
+
 				add_files.append(x)
 				f.write(x + '\n')
 
@@ -323,10 +323,14 @@ def create_diccionary(crnn, w2i, i2w, type, name, term, file_name):
 def decode_CTC(batch_posteriorgram, input_length):
 	out = list()
 	confidences = list()
+	median_confidences = list()
+	minimum_confidences = list()
+	maximum_confidences = list()
 
 	for it_batch in range(len(batch_posteriorgram)):
 		#Performing Best Path decoding:
 		decoded_sequence = list()
+		max_list = list()
 		# posteriorgram = batch_posteriorgram[it_batch][0:original_batch_images_size[it_batch]]
 		posteriorgram = batch_posteriorgram[it_batch]
 
@@ -337,12 +341,26 @@ def decode_CTC(batch_posteriorgram, input_length):
 		for array in posteriorgram[:input_length[it_batch],:]:
 			#Estimated symbol:
 			decoded_value = [np.where(array.max() == array)[0][0] if np.where(array.max() == array)[0][0] != len(array) -1 else -1]
-			total_estimation += 1 + array.max()
+			max_value = 1 + array.max()
+			#print(1 + array)
+			#print(max_value)
+			#print("Size: ", len(array))
+			total_estimation += max_value
+			max_list.append(max_value)
 
 			#Appending symbol:
 			decoded_sequence.extend(decoded_value)
 		
 		mean_estimation = total_estimation / total_timesteps
+
+		"""
+		print('*********************************')
+		print(max_list)
+		print('---------------------------------')
+		max_list.sort()
+		print(max_list)
+		print('*********************************')
+		"""
 		
 		#Applying function B for grouping alike symbols:
 		decoded_sequence = [i[0] for i in groupby(decoded_sequence) if i[0] != -1]
@@ -350,7 +368,19 @@ def decode_CTC(batch_posteriorgram, input_length):
 		out.append(decoded_sequence)
 		confidences.append(mean_estimation)
 
-	return out, confidences
+		max_list.sort()
+
+		minimum_confidences.append(max_list[0])
+		maximum_confidences.append(max_list[-1])
+		median_confidences.append(max_list[len(max_list) // 2])
+
+	"""
+	print("minimum_confidences: ", minimum_confidences)
+	print("maximum_confidences: ", maximum_confidences)
+	print("median_confidences: ", median_confidences)
+	"""
+	
+	return out, confidences, minimum_confidences, maximum_confidences, median_confidences
 
 
 
@@ -375,7 +405,7 @@ def evalute_partition(w2i, pred_model, type, name, rate, img_height = 50, partit
 		img_batch, gt_batch, input_length, _ = data.load_batch_data(w2i, files[init_idx:end_idx], img_height, type, name)
 
 		batch_posteriorgram = pred_model(torch.from_numpy(np.array(img_batch)).float().to(device))
-		prediction, confidence_list = decode_CTC(batch_posteriorgram.cpu().detach().numpy(), input_length)
+		prediction, confidence_list, _, _, _ = decode_CTC(batch_posteriorgram.cpu().detach().numpy(), input_length)
 
 		files_names += files[init_idx:end_idx]
 		confidences += confidence_list

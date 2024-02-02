@@ -20,6 +20,10 @@ def evaluation_loop(crnn, w2i, files, type, input):
 	files_names = list()
 	confidences = list()
 
+	median_confidences = list()
+	minimum_confidences = list()
+	maximum_confidences = list()
+
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 	while it < len(files):
@@ -28,17 +32,21 @@ def evaluation_loop(crnn, w2i, files, type, input):
 		img_batch, gt_batch, input_length, _ = data.load_batch_data(w2i, files[init_idx:end_idx], config.img_height, type, input)
 
 		batch_posteriorgram = crnn(torch.from_numpy(np.array(img_batch)).float().to(device))
-		prediction, confidence_list = train.decode_CTC(batch_posteriorgram.cpu().detach().numpy(), input_length)
+		prediction, confidence_list, minimum_list, maximum_list, median_list = train.decode_CTC(batch_posteriorgram.cpu().detach().numpy(), input_length)
 
 		files_names += files[init_idx:end_idx]
 		confidences += confidence_list
+
+		minimum_confidences += minimum_list
+		maximum_confidences += maximum_list
+		median_confidences += median_list
 
 		y_pred.extend(prediction)
 		y_true.extend(gt_batch)
 
 		it = end_idx
 
-	return files_names, confidences, y_pred, y_true
+	return files_names, confidences, y_pred, y_true, minimum_confidences, maximum_confidences, median_confidences
 
 
 if __name__ == '__main__':
